@@ -10,6 +10,8 @@ class AuditLogger:
     def __init__(self, patient_name: str):
         self.session_id = str(uuid.uuid4())
         self.patient_name = patient_name
+        # Ensure the data directory exists so the first write never fails
+        AUDIT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
     def _write(self, event: str, data: dict | None = None) -> None:
         entry = {
@@ -19,6 +21,7 @@ class AuditLogger:
             "event": event,
             "data": data or {},
         }
+        # "a" = append — existing entries are never overwritten across restarts
         with open(AUDIT_FILE, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
 
