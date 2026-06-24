@@ -1,7 +1,7 @@
 [
   {
     "id": "d1",
-    "name": "Dr. Sarah Smith",
+    "name": "Doctor Sarah Smith",
     "specialty": "General Practice",
     "availability": {
       "Monday":    ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30", "15:00", "15:30"],
@@ -11,7 +11,7 @@
   },
   {
     "id": "d2",
-    "name": "Dr. Tom Harris",
+    "name": "Doctor Tom Harris",
     "specialty": "General Practice",
     "availability": {
       "Tuesday":   ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30"],
@@ -21,7 +21,7 @@
   },
   {
     "id": "d3",
-    "name": "Dr. James Lee",
+    "name": "Doctor James Lee",
     "specialty": "Cardiology",
     "availability": {
       "Tuesday":   ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"],
@@ -30,7 +30,7 @@
   },
   {
     "id": "d4",
-    "name": "Dr. Maria Costa",
+    "name": "Doctor Maria Costa",
     "specialty": "Cardiology",
     "availability": {
       "Monday":    ["10:00", "10:30", "11:00", "11:30", "14:00", "14:30"],
@@ -39,7 +39,7 @@
   },
   {
     "id": "d5",
-    "name": "Dr. Priya Nair",
+    "name": "Doctor Priya Nair",
     "specialty": "Dermatology",
     "availability": {
       "Monday":    ["13:00", "13:30", "14:00", "14:30"],
@@ -49,7 +49,7 @@
   },
   {
     "id": "d6",
-    "name": "Dr. Kevin Park",
+    "name": "Doctor Kevin Park",
     "specialty": "Dermatology",
     "availability": {
       "Tuesday":   ["13:00", "13:30", "14:00", "14:30", "15:00", "15:30"],
@@ -58,7 +58,7 @@
   },
   {
     "id": "d7",
-    "name": "Dr. Aisha Patel",
+    "name": "Doctor Aisha Patel",
     "specialty": "Pediatrics",
     "availability": {
       "Monday":    ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"],
@@ -68,7 +68,7 @@
   },
   {
     "id": "d8",
-    "name": "Dr. Ben Carter",
+    "name": "Doctor Ben Carter",
     "specialty": "Pediatrics",
     "availability": {
       "Tuesday":   ["09:00", "09:30", "10:00", "10:30", "11:00", "14:00", "14:30"],
@@ -77,7 +77,7 @@
   },
   {
     "id": "d9",
-    "name": "Dr. Elena Rossi",
+    "name": "Doctor Elena Rossi",
     "specialty": "Orthopedics",
     "availability": {
       "Monday":    ["14:00", "14:30", "15:00", "15:30", "16:00", "16:30"],
@@ -87,7 +87,7 @@
   },
   {
     "id": "d10",
-    "name": "Dr. Omar Khalil",
+    "name": "Doctor Omar Khalil",
     "specialty": "Orthopedics",
     "availability": {
       "Tuesday":   ["14:00", "14:30", "15:00", "15:30", "16:00", "16:30"],

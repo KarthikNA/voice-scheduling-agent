@@ -1,7 +1,7 @@
 import sys
 from agents.orchestrator import Orchestrator, LLMError
 from services.audit_service import AuditLogger
-from services.tts_service import speak, is_configured as tts_configured
+from services.tts_service import speak, is_configured as tts_configured, check as tts_check
 
 FAREWELL = (
     "Thank you for calling our clinic. "
@@ -14,10 +14,13 @@ def main():
     print("=" * 52)
     print("   Clinic Appointment Scheduling Assistant")
     print("=" * 52)
-    if tts_configured():
-        print("Mode: voice + text")
+    tts_problems = tts_check()
+    if tts_problems:
+        print("Mode: text only")
+        for problem in tts_problems:
+            print(f"  [TTS] {problem}")
     else:
-        print("Mode: text only  (set SPEECHMATICS_API_KEY to enable voice)")
+        print("Mode: voice + text")
     print("Type 'quit' or 'exit' to end the call.\n")
 
     patient_name = input("Please enter your name: ").strip()
