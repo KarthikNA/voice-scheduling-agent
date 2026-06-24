@@ -6,6 +6,7 @@ from anthropic import APIConnectionError, APIStatusError, APITimeoutError
 
 from services.doctor_service import list_doctors, get_available_slots
 from services.scheduling_service import book_appointment, cancel_appointment, list_appointments
+from services.audit_service import AuditLogger
 
 load_dotenv()
 
@@ -128,9 +129,10 @@ class LLMError(Exception):
 
 
 class Orchestrator:
-    def __init__(self):
+    def __init__(self, audit: AuditLogger):
         self.client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         self.history: list[dict] = []
+        self.audit = audit
 
     def _system(self, patient_name: str) -> str:
         from datetime import date
@@ -179,11 +181,12 @@ class Orchestrator:
             if not text:
                 raise ValueError("Empty greeting response")
             self.history.append({"role": "assistant", "content": response.content})
-            return text
-        except Exception:
-            fallback = _FALLBACK_GREETING.format(patient_name=patient_name)
-            self.history.append({"role": "assistant", "content": fallback})
-            return fallback
+        except Exception as e:
+            self.audit.error(str(e), fatal=False, context="greet")
+            text = _FALLBACK_GREETING.format(patient_name=patient_name)
+            self.history.append({"role": "assistant", "content": text})
+        self.audit.greeting(text)
+        return text
 
     def run(self, patient_name: str, user_message: str) -> str:
         """
@@ -199,10 +202,9 @@ class Orchestrator:
             try:
                 response = self._call(system)
             except LLMError as e:
+                self.audit.error(str(e), fatal=e.fatal, context="llm_call")
                 if e.fatal:
                     raise
-                # Transient error: pop the user message so history stays consistent,
-                # then surface a friendly in-conversation apology instead of crashing.
                 self.history.pop()
                 return _TRANSIENT_ERROR_MSG
 
@@ -220,7 +222,9 @@ class Orchestrator:
 
             tool_results = []
             for tool_use in tool_uses:
+                self.audit.tool_call(tool_use.name, tool_use.input)
                 result = self._dispatch(patient_name, tool_use.name, tool_use.input)
+                self.audit.tool_result(tool_use.name, result)
                 tool_results.append({
                     "type": "tool_result",
                     "tool_use_id": tool_use.id,
@@ -229,7 +233,7 @@ class Orchestrator:
 
             self.history.append({"role": "user", "content": tool_results})
 
-        # Safety valve: too many tool rounds — break the loop gracefully
+        self.audit.error("Max tool rounds exceeded", fatal=False, context="run_loop")
         return "I'm sorry, I seem to be going in circles. Could you rephrase your request?"
 
     def _dispatch(self, patient_name: str, tool_name: str, inputs: dict) -> dict:

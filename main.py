@@ -1,5 +1,6 @@
 import sys
 from agents.orchestrator import Orchestrator, LLMError
+from services.audit_service import AuditLogger
 from services.tts_service import speak, is_configured as tts_configured
 
 FAREWELL = (
@@ -24,15 +25,12 @@ def main():
         print("Name cannot be empty. Exiting.")
         sys.exit(1)
 
-    orchestrator = Orchestrator()
+    audit = AuditLogger(patient_name)
+    audit.session_start()
 
-    try:
-        greeting = orchestrator.greet(patient_name)
-    except LLMError as e:
-        print(f"\nError: {e}")
-        print("Unable to connect. Please try again later.")
-        sys.exit(1)
+    orchestrator = Orchestrator(audit=audit)
 
+    greeting = orchestrator.greet(patient_name)
     print(f"\nAssistant: {greeting}\n")
     speak(greeting)
 
@@ -40,6 +38,7 @@ def main():
         try:
             user_input = input("You: ").strip()
         except (KeyboardInterrupt, EOFError):
+            audit.session_end(reason="keyboard_interrupt")
             print(f"\nAssistant: {FAREWELL}")
             speak(FAREWELL)
             break
@@ -48,18 +47,23 @@ def main():
             continue
 
         if user_input.lower() in {"quit", "exit"}:
+            audit.session_end(reason="user_quit")
             print(f"\nAssistant: {FAREWELL}")
             speak(FAREWELL)
             break
 
+        audit.user_message(user_input)
+
         try:
             reply = orchestrator.run(patient_name, user_input)
         except LLMError as e:
-            # Fatal errors (bad key, invalid request) end the session
+            audit.error(str(e), fatal=True, context="main_loop")
             print(f"\nError: {e}")
             print("The session has ended. Goodbye!")
+            audit.session_end(reason="fatal_error")
             sys.exit(1)
 
+        audit.assistant_reply(reply)
         print(f"\nAssistant: {reply}\n")
         speak(reply)
 
