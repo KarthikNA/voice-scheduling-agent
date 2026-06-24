@@ -107,6 +107,7 @@ class Orchestrator:
                     system=system,
                     tools=TOOLS,
                     messages=self.history,
+                    output_config={"effort": "medium"},
                 )
             except APIConnectionError:
                 raise LLMError("Could not reach the Anthropic API. Check your internet connection.")

@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "id": "827241af",
+    "patient_name": "Karthik",
+    "doctor_id": "d7",
+    "doctor_name": "Dr. Aisha Patel",
+    "specialty": "Pediatrics",
+    "date": "2026-06-26",
+    "time": "14:30",
+    "status": "booked"
+  }
+]
