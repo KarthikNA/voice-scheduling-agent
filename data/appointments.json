@@ -8,5 +8,35 @@
     "date": "2026-06-26",
     "time": "14:30",
     "status": "booked"
+  },
+  {
+    "id": "16083487",
+    "patient_name": "Karthik",
+    "doctor_id": "d3",
+    "doctor_name": "Dr. James Lee",
+    "specialty": "Cardiology",
+    "date": "2026-06-30",
+    "time": "10:30",
+    "status": "cancelled"
+  },
+  {
+    "id": "ad3aed34",
+    "patient_name": "John",
+    "doctor_id": "d2",
+    "doctor_name": "Dr. Tom Harris",
+    "specialty": "General Practice",
+    "date": "2026-06-25",
+    "time": "10:00",
+    "status": "booked"
+  },
+  {
+    "id": "9ed6ad2d",
+    "patient_name": "John",
+    "doctor_id": "d7",
+    "doctor_name": "Dr. Aisha Patel",
+    "specialty": "Pediatrics",
+    "date": "2026-06-26",
+    "time": "15:30",
+    "status": "booked"
   }
 ]
