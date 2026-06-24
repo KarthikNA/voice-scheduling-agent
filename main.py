@@ -1,8 +1,9 @@
 import sys
 from agents.orchestrator import Orchestrator, LLMError
+from services.tts_service import speak, is_configured as tts_configured
 
 FAREWELL = (
-    "\nThank you for calling our clinic. "
+    "Thank you for calling our clinic. "
     "We wish you good health and a wonderful day ahead. "
     "Take care, and goodbye!"
 )
@@ -12,6 +13,10 @@ def main():
     print("=" * 52)
     print("   Clinic Appointment Scheduling Assistant")
     print("=" * 52)
+    if tts_configured():
+        print("Mode: voice + text")
+    else:
+        print("Mode: text only  (set SPEECHMATICS_API_KEY to enable voice)")
     print("Type 'quit' or 'exit' to end the call.\n")
 
     patient_name = input("Please enter your name: ").strip()
@@ -29,29 +34,34 @@ def main():
         sys.exit(1)
 
     print(f"\nAssistant: {greeting}\n")
+    speak(greeting)
 
     while True:
         try:
             user_input = input("You: ").strip()
         except (KeyboardInterrupt, EOFError):
-            print(FAREWELL)
+            print(f"\nAssistant: {FAREWELL}")
+            speak(FAREWELL)
             break
 
         if not user_input:
             continue
 
         if user_input.lower() in {"quit", "exit"}:
-            print(FAREWELL)
+            print(f"\nAssistant: {FAREWELL}")
+            speak(FAREWELL)
             break
 
         try:
             reply = orchestrator.run(patient_name, user_input)
         except LLMError as e:
+            # Fatal errors (bad key, invalid request) end the session
             print(f"\nError: {e}")
-            print("The session has ended due to an unrecoverable error. Goodbye!")
+            print("The session has ended. Goodbye!")
             sys.exit(1)
 
         print(f"\nAssistant: {reply}\n")
+        speak(reply)
 
 
 if __name__ == "__main__":

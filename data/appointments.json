@@ -48,5 +48,15 @@
     "date": "2026-06-24",
     "time": "16:00",
     "status": "booked"
+  },
+  {
+    "id": "4a6743c0",
+    "patient_name": "Rohan",
+    "doctor_id": "d9",
+    "doctor_name": "Dr. Elena Rossi",
+    "specialty": "Orthopedics",
+    "date": "2026-06-25",
+    "time": "09:30",
+    "status": "booked"
   }
 ]
