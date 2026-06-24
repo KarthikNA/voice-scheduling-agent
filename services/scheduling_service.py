@@ -20,33 +20,36 @@ def _save(appointments: list[dict]) -> None:
 def book_appointment(patient_name: str, doctor_id: str, date: str, time: str) -> dict:
     """
     Book a slot for a patient. Returns the new appointment or an error dict.
-    date: YYYY-MM-DD, time: HH:MM
+    date: YYYY-MM-DD, time: HH:MM (24-hour)
     """
     doctor = get_doctor(doctor_id)
     if not doctor:
         return {"error": f"No doctor found with id '{doctor_id}'."}
 
-    available = get_available_slots(doctor_id, date)
-    if time not in available:
-        if not available:
-            return {"error": f"{doctor['name']} has no available slots on {date}."}
+    slots_info = get_available_slots(doctor_id, date)
+    if not slots_info["available"]:
+        return {"error": slots_info.get("message", "No slots available.")}
+
+    if time not in slots_info["slots"]:
         return {
             "error": f"{time} is not available for {doctor['name']} on {date}. "
-                     f"Available slots: {', '.join(available)}."
+                     f"Available slots: {', '.join(slots_info['slots'])}."
         }
 
     appointments = _load()
 
-    # Prevent double-booking the same patient with the same doctor at the same time
+    # Block patient from booking any doctor at a timeslot they already have covered
     for a in appointments:
         if (
             a["patient_name"].lower() == patient_name.lower()
-            and a["doctor_id"] == doctor_id
             and a["date"] == date
             and a["time"] == time
             and a["status"] == "booked"
         ):
-            return {"error": "You already have this appointment booked."}
+            return {
+                "error": f"You already have an appointment at {time} on {date} "
+                         f"with {a['doctor_name']}. You cannot book two appointments at the same time."
+            }
 
     appointment = {
         "id": str(uuid.uuid4())[:8],

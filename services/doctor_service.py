@@ -1,5 +1,7 @@
 import json
+from datetime import date as date_type, datetime
 from pathlib import Path
+import calendar
 
 DOCTORS_FILE = Path(__file__).parent.parent / "data" / "doctors.json"
 APPOINTMENTS_FILE = Path(__file__).parent.parent / "data" / "appointments.json"
@@ -23,25 +25,41 @@ def list_doctors() -> list[dict]:
     ]
 
 
-def get_available_slots(doctor_id: str, date: str) -> list[str]:
+def get_available_slots(doctor_id: str, date: str) -> dict:
     """
-    Return free time slots for a doctor on a given date (YYYY-MM-DD).
-    Slots already booked are excluded.
+    Return available time slots for a doctor on a given date (YYYY-MM-DD).
+    Returns a dict with 'available' bool, 'slots' list, and context fields.
+    Past dates and past time slots (for today) are excluded.
     """
-    from datetime import date as date_type
-    import calendar
-
     doctors = {d["id"]: d for d in _load_doctors()}
     doctor = doctors.get(doctor_id)
     if not doctor:
-        return []
+        return {"available": False, "reason": "doctor_not_found", "slots": []}
 
+    today = date_type.today()
     parsed = date_type.fromisoformat(date)
-    day_name = calendar.day_name[parsed.weekday()]  # e.g. "Monday"
 
+    if parsed < today:
+        return {
+            "available": False,
+            "reason": "past_date",
+            "doctor_name": doctor["name"],
+            "slots": [],
+            "message": "Cannot book appointments for a date in the past.",
+        }
+
+    day_name = calendar.day_name[parsed.weekday()]
     all_slots = doctor["availability"].get(day_name, [])
+
     if not all_slots:
-        return []
+        return {
+            "available": False,
+            "reason": "not_working",
+            "doctor_name": doctor["name"],
+            "day": day_name,
+            "slots": [],
+            "message": f"{doctor['name']} does not work on {day_name}s.",
+        }
 
     booked = {
         a["time"]
@@ -51,7 +69,34 @@ def get_available_slots(doctor_id: str, date: str) -> list[str]:
         and a["status"] == "booked"
     }
 
-    return [s for s in all_slots if s not in booked]
+    free_slots = [s for s in all_slots if s not in booked]
+
+    # Filter out past time slots when the date is today
+    if parsed == today:
+        now = datetime.now().time()
+        free_slots = [
+            s for s in free_slots
+            if datetime.strptime(s, "%H:%M").time() > now
+        ]
+
+    if not free_slots:
+        return {
+            "available": False,
+            "reason": "fully_booked",
+            "doctor_name": doctor["name"],
+            "day": day_name,
+            "slots": [],
+            "message": f"{doctor['name']} has no remaining available slots on {date} ({day_name}).",
+        }
+
+    return {
+        "available": True,
+        "doctor_name": doctor["name"],
+        "specialty": doctor["specialty"],
+        "day": day_name,
+        "date": date,
+        "slots": free_slots,
+    }
 
 
 def get_doctor(doctor_id: str) -> dict | None:
