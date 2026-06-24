@@ -2,6 +2,7 @@ import json
 import os
 from dotenv import load_dotenv
 import anthropic
+from anthropic import APIConnectionError, APIStatusError, APITimeoutError
 
 from services.doctor_service import list_doctors, get_available_slots
 from services.scheduling_service import book_appointment, cancel_appointment, list_appointments
@@ -81,6 +82,10 @@ Guidelines:
 - The patient's name is already known — do not ask for it."""
 
 
+class LLMError(Exception):
+    """Raised when the LLM call fails in an unrecoverable way."""
+
+
 class Orchestrator:
     def __init__(self):
         self.client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
@@ -95,13 +100,24 @@ class Orchestrator:
         system = SYSTEM_PROMPT.format(today=today)
 
         while True:
-            response = self.client.messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=1024,
-                system=system,
-                tools=TOOLS,
-                messages=self.history,
-            )
+            try:
+                response = self.client.messages.create(
+                    model="claude-sonnet-4-6",
+                    max_tokens=1024,
+                    system=system,
+                    tools=TOOLS,
+                    messages=self.history,
+                )
+            except APIConnectionError:
+                raise LLMError("Could not reach the Anthropic API. Check your internet connection.")
+            except APITimeoutError:
+                raise LLMError("The request to the Anthropic API timed out. Please try again later.")
+            except APIStatusError as e:
+                if e.status_code == 401:
+                    raise LLMError("Invalid API key. Please check your ANTHROPIC_API_KEY in .env.")
+                if e.status_code == 429:
+                    raise LLMError("Rate limit exceeded. Please wait a moment and try again.")
+                raise LLMError(f"Anthropic API error ({e.status_code}): {e.message}")
 
             # Collect tool uses and text from this response
             tool_uses = [b for b in response.content if b.type == "tool_use"]

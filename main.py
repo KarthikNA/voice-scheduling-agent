@@ -1,5 +1,5 @@
 import sys
-from agents.orchestrator import Orchestrator
+from agents.orchestrator import Orchestrator, LLMError
 
 
 def main():
@@ -31,7 +31,12 @@ def main():
             print("Goodbye!")
             break
 
-        reply = orchestrator.run(patient_name, user_input)
+        try:
+            reply = orchestrator.run(patient_name, user_input)
+        except LLMError as e:
+            print(f"\nError: {e}")
+            print("The session has ended due to an unrecoverable error. Goodbye!")
+            sys.exit(1)
         print(f"\nAssistant: {reply}\n")
 
 
