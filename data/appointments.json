@@ -38,5 +38,15 @@
     "date": "2026-06-26",
     "time": "15:30",
     "status": "booked"
+  },
+  {
+    "id": "b43cbee9",
+    "patient_name": "Robin",
+    "doctor_id": "d5",
+    "doctor_name": "Dr. Priya Nair",
+    "specialty": "Dermatology",
+    "date": "2026-06-24",
+    "time": "16:00",
+    "status": "booked"
   }
 ]
