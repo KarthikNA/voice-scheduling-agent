@@ -78,5 +78,45 @@
     "date": "2026-06-26",
     "time": "10:00",
     "status": "booked"
+  },
+  {
+    "id": "9d0e6c60",
+    "patient_name": "Karthik",
+    "doctor_id": "d1",
+    "doctor_name": "Doctor Sarah Smith",
+    "specialty": "General Practice",
+    "date": "2026-06-26",
+    "time": "14:00",
+    "status": "booked"
+  },
+  {
+    "id": "bbce8dae",
+    "patient_name": "Amy",
+    "doctor_id": "d1",
+    "doctor_name": "Doctor Sarah Smith",
+    "specialty": "General Practice",
+    "date": "2026-06-26",
+    "time": "13:00",
+    "status": "cancelled"
+  },
+  {
+    "id": "09990357",
+    "patient_name": "Thomas",
+    "doctor_id": "d2",
+    "doctor_name": "Doctor Tom Harris",
+    "specialty": "General Practice",
+    "date": "2026-06-25",
+    "time": "11:00",
+    "status": "booked"
+  },
+  {
+    "id": "941349b1",
+    "patient_name": "Amy",
+    "doctor_id": "d1",
+    "doctor_name": "Doctor Sarah Smith",
+    "specialty": "General Practice",
+    "date": "2026-06-26",
+    "time": "13:00",
+    "status": "booked"
   }
 ]
