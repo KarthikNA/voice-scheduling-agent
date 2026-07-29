@@ -22,6 +22,61 @@ services/audit_service.py        JSONL audit logger
 data/                            doctors.json, appointments.json, audit.jsonl
 ```
 
+## Architecture
+
+The system is a small, layered CLI application. Each layer has a single responsibility, and data flows in one direction: the CLI drives the orchestrator, which drives the LLM and dispatches its tool calls to the service layer, which reads and writes local JSON files.
+
+```
+     ┌──────────────────────────────────────────────┐
+     │  main.py  (CLI loop, TTS playback, exit)     │
+     └───────────────┬──────────────────────────────┘
+                     │ user turn / assistant reply
+                     ▼
+     ┌──────────────────────────────────────────────┐
+     │  agents/orchestrator.py                      │
+     │  - Anthropic client (Claude Sonnet)          │
+     │  - System prompt + tool schema               │
+     │  - Tool-use loop (up to 8 rounds)            │
+     │  - Error taxonomy (LLMError, fatal vs not)   │
+     └───┬───────────────────────────┬──────────────┘
+         │ tool_use                  │ every event
+         ▼                           ▼
+  ┌──────────────────┐      ┌────────────────────────┐
+  │  services/       │      │  services/             │
+  │  doctor_service  │      │  audit_service         │
+  │  scheduling_svc  │      │  (append to JSONL)     │
+  └────────┬─────────┘      └───────────┬────────────┘
+           │                            │
+           ▼                            ▼
+   data/doctors.json              data/audit.jsonl
+   data/appointments.json
+```
+
+### Components
+
+- **CLI layer — [main.py](main.py)**
+  Prompts for the patient's name, runs the input/output loop, calls `Orchestrator.greet` once and `Orchestrator.run` per turn, prints assistant replies, and hands each reply to the TTS service. It also handles graceful exits (`quit`, `exit`, Ctrl-C) and terminates the process on fatal `LLMError`.
+
+- **Agent layer — [agents/orchestrator.py](agents/orchestrator.py)**
+  Owns the Anthropic client, the conversation history, the system prompt (rendered with the patient name and today's date), and the tool schema. On each turn it runs a bounded loop: call Claude → if the response contains `tool_use` blocks, execute them via `_dispatch` and feed the `tool_result` blocks back → repeat until Claude returns plain text (`end_turn`) or the round budget is exhausted. All API errors are normalized into `LLMError(fatal=…)` so the CLI can decide whether to keep the session alive or exit.
+
+- **Service layer — [services/](services)**
+  Pure Python functions that implement the tools exposed to the model:
+  - `doctor_service.list_doctors`, `get_available_slots` — read `data/doctors.json`, cross-reference `data/appointments.json`, and filter out past dates, past times on today, and slots the doctor doesn't work.
+  - `scheduling_service.book_appointment`, `cancel_appointment`, `list_appointments` — read/write `data/appointments.json`. Every mutation is scoped to the current `patient_name`, which is passed in by the orchestrator (never by the model), so a patient cannot act on someone else's data even if the LLM is coaxed to try.
+  - `tts_service.speak` — asynchronously calls Speechmatics TTS, writes the WAV to a temp file, and plays it via `afplay`. `check()` runs a pre-flight (API key present, SDK importable, `afplay` available) so the CLI can announce text-only mode cleanly. TTS failures are logged to stderr but never break the session.
+  - `audit_service.AuditLogger` — appends one JSON object per event (`session_start`, `user_message`, `tool_call`, `tool_result`, `assistant_reply`, `error`, `session_end`) to `data/audit.jsonl`, giving a full replay of every session.
+
+- **Data layer — [data/](data)**
+  Flat JSON files. `doctors.json` is seed data (id, name, specialty, weekly availability). `appointments.json` is the mutable booking store. `audit.jsonl` is append-only.
+
+### Key design choices
+
+- **Tools instead of prompt-only scheduling.** The model never invents slots or appointment ids; it must go through the tool schema, and each tool returns structured JSON the model narrates back in natural speech.
+- **Patient identity is server-side.** The orchestrator injects `patient_name` into every mutating tool call; the model has no way to override it.
+- **Fail soft on transient errors, hard on config errors.** Network blips or 429s return a polite retry message and pop the last user turn from history; a bad API key raises `LLMError(fatal=True)` and ends the session.
+- **Voice is optional and isolated.** The TTS service can be missing keys, missing SDK, or fail at runtime — none of it affects the conversation.
+
 ## Requirements
 
 - Python 3.10+
